@@ -13,7 +13,6 @@
 #define Y_MIN -1.5
 #define Y_MAX 1.5
 
-// Функция для вычисления значения пикселя в множестве Мандельброта
 int mandelbrot(double real, double imag) {
     std::complex<double> c(real, imag);
     std::complex<double> z(0, 0);
@@ -25,7 +24,6 @@ int mandelbrot(double real, double imag) {
     return iter;
 }
 
-// Последовательная версия
 void compute_mandelbrot_sequential(std::vector<int>& buffer) {
     for (int y = 0; y < HEIGHT; y++) {
         for (int x = 0; x < WIDTH; x++) {
@@ -36,13 +34,12 @@ void compute_mandelbrot_sequential(std::vector<int>& buffer) {
     }
 }
 
-// Функция для преобразования итераций в цвет
 void buffer_to_image(const std::vector<int>& buffer, cv::Mat& image) {
     for (int y = 0; y < HEIGHT; y++) {
         for (int x = 0; x < WIDTH; x++) {
             int iter = buffer[y * WIDTH + x];
             int value = (iter == MAX_ITER) ? 0 : (255 * iter / MAX_ITER);
-            image.at<cv::Vec3b>(y, x) = cv::Vec3b(value, value, 255); // Оттенки синего
+            image.at<cv::Vec3b>(y, x) = cv::Vec3b(value, value, 255);
         }
     }
 }
@@ -54,11 +51,9 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    // Инициализация изображения
     cv::Mat image(HEIGHT, WIDTH, CV_8UC3, cv::Scalar(0, 0, 0));
     std::vector<int> buffer(HEIGHT * WIDTH, 0);
 
-    // Последовательная версия (выполняется только на rank 0)
     double seq_time = 0.0;
     if (rank == 0) {
         auto start = std::chrono::high_resolution_clock::now();
@@ -68,18 +63,14 @@ int main(int argc, char** argv) {
         std::cout << "Sequential time: " << seq_time << " seconds\n";
     }
 
-    // Параллельная версия
     auto start = std::chrono::high_resolution_clock::now();
 
-    // Разделение строк между процессами
     int rows_per_process = HEIGHT / size;
     int start_row = rank * rows_per_process;
     int end_row = (rank == size - 1) ? HEIGHT : start_row + rows_per_process;
 
-    // Локальный буфер для процесса
     std::vector<int> local_buffer((end_row - start_row) * WIDTH, 0);
 
-    // Вычисление фрактала для локальных строк
     for (int y = start_row; y < end_row; y++) {
         for (int x = 0; x < WIDTH; x++) {
             double real = X_MIN + (X_MAX - X_MIN) * x / WIDTH;
@@ -88,7 +79,6 @@ int main(int argc, char** argv) {
         }
     }
 
-    // Сбор данных от всех процессов
     std::vector<int> recv_counts(size);
     std::vector<int> displs(size);
     for (int i = 0; i < size; i++) {
@@ -101,11 +91,9 @@ int main(int argc, char** argv) {
                 buffer.data(), recv_counts.data(), displs.data(), MPI_INT,
                 0, MPI_COMM_WORLD);
 
-    // Замер времени параллельной версии
     auto end = std::chrono::high_resolution_clock::now();
     double par_time = std::chrono::duration<double>(end - start).count();
 
-    // Вывод времени и визуализация на rank 0
     if (rank == 0) {
         std::cout << "Parallel time (" << size << " processes): " << par_time << " seconds\n";
         buffer_to_image(buffer, image);
