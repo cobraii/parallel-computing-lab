@@ -3,8 +3,8 @@
 #include <time.h>
 #include <omp.h>
 
-#define SIZE 100 // Уменьшено для тестирования (можно увеличить до 1000)
-#define ITERATIONS 10 // Уменьшено для тестирования (можно увеличить до 100)
+#define SIZE 100 
+#define ITERATIONS 10 
 #define ALIVE 'X'
 #define DEAD '.'
 
@@ -61,7 +61,6 @@ void swap_grids(char ***current, char ***next) {
 }
 
 int main() {
-    // Выделение памяти
     char **grid = (char **)malloc(SIZE * sizeof(char *));
     char **next_grid = (char **)malloc(SIZE * sizeof(char *));
     if (!grid || !next_grid) {
@@ -77,17 +76,15 @@ int main() {
         }
     }
 
-    // Инициализация сетки
     initialize_grid(grid);
 
-    // Замер времени
     double start_time = omp_get_wtime();
 
     // Основной цикл
     for (int iter = 0; iter < ITERATIONS; iter++) {
         printf("Starting iteration %d\n", iter);
-        if (iter % 5 == 0) { // Вывод каждые 5 итераций для уменьшения нагрузки
-            system("cls"); // Очистка консоли (для Windows)
+        if (iter % 5 == 0) { 
+            system("cls"); 
             printf("Iteration %d:\n", iter);
             print_grid(grid);
         }
@@ -95,11 +92,9 @@ int main() {
         swap_grids(&grid, &next_grid);
     }
 
-    // Финальный замер времени
     double end_time = omp_get_wtime();
     printf("Execution time: %f seconds\n", end_time - start_time);
 
-    // Освобождение памяти
     for (int i = 0; i < SIZE; i++) {
         free(grid[i]);
         free(next_grid[i]);
